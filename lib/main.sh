@@ -409,6 +409,7 @@ if [[ $IGNORE_UPDATES != yes ]]; then
 	fetch_from_repo "https://github.com/armbian/odroidc2-blobs" "odroidc2-blobs" "branch:master"
 	fetch_from_repo "https://github.com/armbian/testings" "testing-reports" "branch:master"
 	fetch_from_repo "https://github.com/rockchip-linux/rkbin" "rkbin" "branch:master"
+	fetch_from_repo "https://github.com/zhangn1985/kvim-blobs" "khadas-blobs" "branch:master"
 fi
 
 compile_sunxi_tools
