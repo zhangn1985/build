@@ -1,8 +1,8 @@
 diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
-index 2c0238ce0..1b55633a9 100644
+index 1fbe24d4fdb6..ff8e7974858b 100644
 --- a/arch/arm64/Makefile
 +++ b/arch/arm64/Makefile
-@@ -125,7 +125,7 @@ core-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
+@@ -130,7 +130,7 @@ core-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
  
  # Default target when executing plain make
  boot		:= arch/arm64/boot
@@ -12,7 +12,7 @@ index 2c0238ce0..1b55633a9 100644
  all:	Image.gz
  
 diff --git a/scripts/package/builddeb b/scripts/package/builddeb
-index c4c580f54..351a33958 100755
+index c4c580f547ef..59a750340819 100755
 --- a/scripts/package/builddeb
 +++ b/scripts/package/builddeb
 @@ -41,6 +41,27 @@ create_package() {
@@ -43,21 +43,19 @@ index c4c580f54..351a33958 100755
  	# Create the package
  	dpkg-gencontrol -p$pname -P"$pdir"
  	dpkg --build "$pdir" ..
-@@ -51,9 +72,11 @@ tmpdir="$objtree/debian/tmp"
+@@ -51,8 +72,10 @@ tmpdir="$objtree/debian/tmp"
  kernel_headers_dir="$objtree/debian/hdrtmp"
  libc_headers_dir="$objtree/debian/headertmp"
  dbg_dir="$objtree/debian/dbgtmp"
 -packagename=linux-image-$version
 -kernel_headers_packagename=linux-headers-$version
--libc_headers_packagename=linux-libc-dev
 +dtb_dir="$objtree/debian/dtbtmp"
-+packagename=linux-image-"$BRANCH$LOCALVERSION"
-+kernel_headers_packagename=linux-headers-"$BRANCH$LOCALVERSION"
-+dtb_packagename=linux-dtb-"$BRANCH$LOCALVERSION"
-+libc_headers_packagename=linux-libc-dev-"$BRANCH$LOCALVERSION"
++packagename=linux-image"$LOCALVERSION"
++kernel_headers_packagename=linux-headers"$LOCALVERSION"
++dtb_packagename=linux-dtb"$LOCALVERSION"
+ libc_headers_packagename=linux-libc-dev
  dbg_packagename=$packagename-dbg
  
- if [ "$ARCH" = "um" ] ; then
 @@ -64,6 +87,15 @@ fi
  # XXX: have each arch Makefile export a variable of the canonical image install
  # path instead
@@ -167,7 +165,7 @@ index c4c580f54..351a33958 100755
  (cd $srctree; find arch/$SRCARCH -name module.lds -o -name Kbuild.platforms -o -name Platform) >> "$objtree/debian/hdrsrcfiles"
  (cd $srctree; find $(find arch/$SRCARCH -name include -o -name scripts -type d) -type f) >> "$objtree/debian/hdrsrcfiles"
  if is_enabled CONFIG_STACK_VALIDATION; then
-@@ -178,15 +268,18 @@ if is_enabled CONFIG_GCC_PLUGINS; then
+@@ -178,14 +268,18 @@ if is_enabled CONFIG_GCC_PLUGINS; then
  fi
  destdir=$kernel_headers_dir/usr/src/linux-headers-$version
  mkdir -p "$destdir"
@@ -182,14 +180,13 @@ index c4c580f54..351a33958 100755
 +
  if [ "$ARCH" != "um" ]; then
 -	create_package "$kernel_headers_packagename" "$kernel_headers_dir"
--	create_package "$libc_headers_packagename" "$libc_headers_dir"
 +	create_package "$kernel_headers_packagename" "$kernel_headers_dir" "headers"
 +	create_package "$dtb_packagename" "$dtb_dir" "dtb"
+ 	create_package "$libc_headers_packagename" "$libc_headers_dir"
  fi
  
- create_package "$packagename" "$tmpdir"
 diff --git a/scripts/package/mkdebian b/scripts/package/mkdebian
-index e0750b704..6ac0114c0 100755
+index e0750b70453f..6ac0114c0f5c 100755
 --- a/scripts/package/mkdebian
 +++ b/scripts/package/mkdebian
 @@ -94,10 +94,12 @@ else
@@ -198,9 +195,9 @@ index e0750b704..6ac0114c0 100755
  sourcename=$KDEB_SOURCENAME
 -packagename=linux-image-$version
 -kernel_headers_packagename=linux-headers-$version
-+packagename=linux-image-$BRANCH$LOCALVERSION
-+kernel_headers_packagename=linux-headers-$BRANCH$LOCALVERSION
-+dtb_packagename=linux-dtb-$BRANCH$LOCALVERSION
++packagename=linux-image$LOCALVERSION
++kernel_headers_packagename=linux-headers$LOCALVERSION
++dtb_packagename=linux-dtb$LOCALVERSION
  dbg_packagename=$packagename-dbg
  debarch=
 +image_name=

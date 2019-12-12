@@ -370,15 +370,17 @@ branch2dir() {
 }
 
 BOOTSOURCEDIR=$BOOTDIR/$(branch2dir ${BOOTBRANCH})
+UBOOT_VERSION=$(grab_version "$SRC/cache/sources/$BOOTSOURCEDIR")
 LINUXSOURCEDIR=$KERNELDIR/$(branch2dir ${KERNELBRANCH})
+LINUX_VERSION=$(grab_version "$SRC/cache/sources/$LINUXSOURCEDIR")
 [[ -n $ATFSOURCE ]] && ATFSOURCEDIR=$ATFDIR/$(branch2dir ${ATFBRANCH})
 
 # define package names
 DEB_BRANCH=${BRANCH//default}
 # if not empty, append hyphen
 DEB_BRANCH=${DEB_BRANCH:+${DEB_BRANCH}-}
-CHOSEN_UBOOT=linux-u-boot-${DEB_BRANCH}${BOARD}
-CHOSEN_KERNEL=linux-image-${DEB_BRANCH}${LINUXFAMILY}
+CHOSEN_UBOOT=linux-u-boot-${BOARD}
+CHOSEN_KERNEL=linux-image-${LINUXFAMILY}
 CHOSEN_ROOTFS=linux-${RELEASE}-root-${DEB_BRANCH}${BOARD}
 CHOSEN_DESKTOP=armbian-${RELEASE}-desktop
 CHOSEN_KSRC=linux-source-${BRANCH}-${LINUXFAMILY}
@@ -420,7 +422,7 @@ for option in $(tr ',' ' ' <<< "$CLEAN_LEVEL"); do
 done
 
 # Compile u-boot if packed .deb does not exist
-if [[ ! -f ${DEB_STORAGE}/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb ]]; then
+if [[ ! -f ${DEB_STORAGE}/${CHOSEN_UBOOT}_${UBOOT_VERSION}+${REVISION}_${ARCH}.deb ]]; then
 	if [[ -n $ATFSOURCE ]]; then
 		compile_atf
 	fi
@@ -428,7 +430,7 @@ if [[ ! -f ${DEB_STORAGE}/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb ]]; then
 fi
 
 # Compile kernel if packed .deb does not exist
-if [[ ! -f ${DEB_STORAGE}/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb ]]; then
+if [[ ! -f ${DEB_STORAGE}/${CHOSEN_KERNEL}_${LINUX_VERSION}+${REVISION}_${ARCH}.deb ]]; then
 	KDEB_CHANGELOG_DIST=$RELEASE
 	compile_kernel
 fi
@@ -448,10 +450,10 @@ fi
 overlayfs_wrapper "cleanup"
 
 # extract kernel version from .deb package
-VER=$(dpkg --info "${DEB_STORAGE}/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb" | grep Descr | awk '{print $(NF)}')
+VER=$(dpkg --info "${DEB_STORAGE}/${CHOSEN_KERNEL}_${LINUX_VERSION}+${REVISION}_${ARCH}.deb" | grep Descr | awk '{print $(NF)}')
 VER="${VER/-$LINUXFAMILY/}"
 
-UBOOT_VER=$(dpkg --info "${DEB_STORAGE}/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb" | grep Descr | awk '{print $(NF)}')
+UBOOT_VER=$(dpkg --info "${DEB_STORAGE}/${CHOSEN_UBOOT}_${UBOOT_VERSION}+${REVISION}_${ARCH}.deb" | grep Descr | awk '{print $(NF)}')
 
 # create board support package
 [[ -n $RELEASE && ! -f ${DEB_STORAGE}/$RELEASE/${CHOSEN_ROOTFS}_${REVISION}_${ARCH}.deb ]] && create_board_package
@@ -467,7 +469,7 @@ if [[ $KERNEL_ONLY != yes ]]; then
 else
 	display_alert "Kernel build done" "@host" "info"
 	display_alert "Target directory" "${DEB_STORAGE}/" "info"
-	display_alert "File name" "${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb" "info"
+	display_alert "File name" "${CHOSEN_KERNEL}_${LINUX_VERSION}+${REVISION}_${ARCH}.deb" "info"
 fi
 
 # hook for function to run after build, i.e. to change owner of $SRC
