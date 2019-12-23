@@ -130,7 +130,7 @@ compile_uboot()
 	[[ -n $toolchain2 ]] && display_alert "Additional compiler version" "${toolchain2_type}gcc $(eval env PATH=$toolchain:$toolchain2:$PATH ${toolchain2_type}gcc -dumpversion)" "info"
 
 	# create directory structure for the .deb package
-	local uboot_name=${CHOSEN_UBOOT}_${UBOOT_VERSION}+${REVISION}_${ARCH}
+	local uboot_name=${CHOSEN_UBOOT}_${UBOOT_VERSION}+${SUBREVISION}_${ARCH}
 	rm -rf $SRC/.tmp/$uboot_name
 	mkdir -p $SRC/.tmp/$uboot_name/usr/lib/{u-boot,$uboot_name} $SRC/.tmp/$uboot_name/DEBIAN
 
@@ -229,7 +229,7 @@ compile_uboot()
 	# set up control file
 	cat <<-EOF > $SRC/.tmp/$uboot_name/DEBIAN/control
 	Package: linux-u-boot-${BOARD}
-	Version: ${version}+${REVISION}
+	Version: ${version}+${SUBREVISION}
 	Architecture: $ARCH
 	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
 	Installed-Size: 1
@@ -395,7 +395,7 @@ compile_kernel()
 	echo -e "\n\t== deb packages: image, headers, firmware, dtb ==\n" >>$DEST/debug/compilation.log
 	eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
 		'make -j1 $kernel_packing \
-		KDEB_PKGVERSION=$version+$REVISION \
+		KDEB_PKGVERSION=$version+$SUBREVISION \
 		BRANCH=$BRANCH \
 		LOCALVERSION="-${LINUXFAMILY}" \
 		KBUILD_DEBARCH=$ARCH \
@@ -409,7 +409,7 @@ compile_kernel()
 
 	cat <<-EOF > $sources_pkg_dir/DEBIAN/control
 	Package: linux-source-${version}-${BRANCH}-${LINUXFAMILY}
-	Version: ${version}-${BRANCH}-${LINUXFAMILY}+${REVISION}
+	Version: ${version}-${BRANCH}-${LINUXFAMILY}+${SUBREVISION}
 	Architecture: all
 	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
 	Section: kernel
