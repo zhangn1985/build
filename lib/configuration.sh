@@ -11,11 +11,10 @@
 
 # common options
 # daily beta build contains date in subrevision
-if [[ $BETA == yes && -z $SUBREVISION ]]; then
-	SUBREVISION=$(date --date="tomorrow" +"%j");
-	REVISION=$(cat ${SRC}/VERSION)".$SUBREVISION"
-else
-	REVISION=$(cat ${SRC}/VERSION)
+if [[ $BETA == yes && -z $SUBREVISION ]]; then SUBREVISION=$(date --date="tomorrow" +"%j"); fi
+REVISION=$(cat ${SRC}/VERSION)
+if [[ -n $SUBREVISION ]]; then
+	REVISION=${REVISION}"."$SUBREVISION # all boards have same revision
 fi
 [[ -z $ROOTPWD ]] && ROOTPWD="1234" # Must be changed @first login
 [[ -z $MAINTAINER ]] && MAINTAINER="Igor Pecovnik" # deb signature
