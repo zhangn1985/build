@@ -18,7 +18,7 @@ uboot_vim2_postprocess()
 					$1/$2/bl30_new.bin \
 					bl30
 
-	python $1/acs_tool.pyc $1/$2/bl2.bin $1/$2/bl2_acs.bin $1/$2/acs.bin 0
+	python $1/$2/acs_tool.pyc $1/$2/bl2.bin $1/$2/bl2_acs.bin $1/$2/acs.bin 0
 
 	$1/$2/blx_fix.sh	$1/$2/bl2_acs.bin \
 					$1/$2/zero_tmp \
