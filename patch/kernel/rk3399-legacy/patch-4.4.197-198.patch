@@ -1,5 +1,53 @@
+From 1ea394bacec0e4d0f0512c196e3f4aa834e4020b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kamil=20Trzci=C5=84ski?= <ayufan@ayufan.eu>
+Date: Sat, 23 Nov 2019 13:50:09 +0100
+Subject: [PATCH] PATCH: kernel 4.4.197-198
+
+---
+ Makefile                                      |  2 +-
+ arch/arm/boot/dts/am4372.dtsi                 |  2 ++
+ .../omap_hwmod_33xx_43xx_ipblock_data.c       |  3 +-
+ arch/mips/loongson64/common/serial.c          |  2 +-
+ arch/parisc/mm/ioremap.c                      | 12 ++++----
+ arch/xtensa/kernel/xtensa_ksyms.c             |  7 -----
+ drivers/base/core.c                           |  3 ++
+ drivers/block/loop.c                          |  1 +
+ drivers/cpufreq/cpufreq.c                     | 10 -------
+ drivers/gpu/drm/drm_edid.c                    |  3 ++
+ drivers/infiniband/hw/cxgb4/mem.c             | 28 +++++++++++--------
+ drivers/memstick/host/jmb38x_ms.c             |  2 +-
+ .../net/ethernet/broadcom/genet/bcmgenet.h    |  1 +
+ drivers/net/ethernet/broadcom/genet/bcmmii.c  | 11 ++++++--
+ drivers/net/ethernet/hisilicon/hns_mdio.c     |  6 +++-
+ drivers/net/xen-netback/interface.c           |  1 -
+ drivers/pci/pci.c                             | 24 ++++++++--------
+ drivers/s390/scsi/zfcp_fsf.c                  | 16 +++++++++--
+ drivers/scsi/megaraid.c                       |  4 +--
+ drivers/scsi/qla2xxx/qla_target.c             |  4 +++
+ drivers/scsi/scsi_sysfs.c                     | 11 +++++++-
+ drivers/scsi/ufs/ufshcd.c                     |  3 ++
+ drivers/usb/class/usblp.c                     |  4 ++-
+ drivers/usb/gadget/udc/lpc32xx_udc.c          |  6 ++--
+ drivers/usb/misc/ldusb.c                      | 20 +++++++------
+ drivers/usb/misc/legousbtower.c               |  5 +---
+ drivers/usb/serial/ti_usb_3410_5052.c         | 10 ++-----
+ fs/btrfs/extent-tree.c                        |  1 +
+ fs/cifs/smb1ops.c                             |  3 ++
+ mm/shmem.c                                    | 20 +++++++------
+ mm/slub.c                                     | 13 +++++++--
+ net/ipv4/route.c                              |  9 ++++--
+ net/mac80211/mlme.c                           |  5 ++--
+ net/sched/act_api.c                           | 12 ++++----
+ net/sched/cls_u32.c                           |  8 ++++--
+ net/sctp/socket.c                             |  4 +--
+ net/wireless/nl80211.c                        |  3 ++
+ net/wireless/wext-sme.c                       |  8 ++++--
+ scripts/namespace.pl                          | 13 +++++----
+ sound/soc/sh/rcar/core.c                      |  1 +
+ 40 files changed, 184 insertions(+), 117 deletions(-)
+
 diff --git a/Makefile b/Makefile
-index 5c150d32cae7..3de38e5e93d1 100644
+index 0ce7f51d9bb4..b6e596baa200 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -1,6 +1,6 @@
@@ -126,11 +174,23 @@ index af948fedd232..64b59552e744 100644
  	spin_lock(&devices_kset->list_lock);
  	/*
  	 * Walk the devices list backward, shutting down each in turn.
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index 7eac581912f0..d0fc2c389726 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -1581,6 +1581,7 @@ static int lo_compat_ioctl(struct block_device *bdev, fmode_t mode,
+ 		arg = (unsigned long) compat_ptr(arg);
+ 	case LOOP_SET_FD:
+ 	case LOOP_CHANGE_FD:
++	case LOOP_SET_DIRECT_IO:
+ 	case LOOP_SET_BLOCK_SIZE:
+ 		err = lo_ioctl(bdev, mode, cmd, arg);
+ 		break;
 diff --git a/drivers/cpufreq/cpufreq.c b/drivers/cpufreq/cpufreq.c
-index 205df72ee873..0836d2939c7a 100644
+index 875f22f17745..38d6243d5203 100644
 --- a/drivers/cpufreq/cpufreq.c
 +++ b/drivers/cpufreq/cpufreq.c
-@@ -2512,14 +2512,6 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
+@@ -2614,14 +2614,6 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
  }
  EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
  
@@ -145,7 +205,7 @@ index 205df72ee873..0836d2939c7a 100644
  struct kobject *cpufreq_global_kobject;
  EXPORT_SYMBOL(cpufreq_global_kobject);
  
-@@ -2531,8 +2523,6 @@ static int __init cpufreq_core_init(void)
+@@ -2633,8 +2625,6 @@ static int __init cpufreq_core_init(void)
  	cpufreq_global_kobject = kobject_create_and_add("cpufreq", &cpu_subsys.dev_root->kobj);
  	BUG_ON(!cpufreq_global_kobject);
  
@@ -155,10 +215,10 @@ index 205df72ee873..0836d2939c7a 100644
  }
  core_initcall(cpufreq_core_init);
 diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
-index 724f7cf52253..b439e2f8ee00 100644
+index 61453724c7d4..e1b515287d26 100644
 --- a/drivers/gpu/drm/drm_edid.c
 +++ b/drivers/gpu/drm/drm_edid.c
-@@ -150,6 +150,9 @@ static struct edid_quirk {
+@@ -151,6 +151,9 @@ static struct edid_quirk {
  	/* Medion MD 30217 PG */
  	{ "MED", 0x7b8, EDID_QUIRK_PREFER_LARGE_75 },
  
@@ -328,7 +388,7 @@ diff --git a/drivers/net/xen-netback/interface.c b/drivers/net/xen-netback/inter
 index 60b26f32d31d..2008c6a02b8a 100644
 --- a/drivers/net/xen-netback/interface.c
 +++ b/drivers/net/xen-netback/interface.c
-@@ -620,7 +620,6 @@ err_tx_unbind:
+@@ -620,7 +620,6 @@ int xenvif_connect(struct xenvif_queue *queue, unsigned long tx_ring_ref,
  err_unmap:
  	xenvif_unmap_frontend_rings(queue);
  err:
@@ -337,7 +397,7 @@ index 60b26f32d31d..2008c6a02b8a 100644
  }
  
 diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
-index 82b0c2cc2fd3..b7f65fc54dc2 100644
+index 385eb7ed93c9..b3ca0938f57a 100644
 --- a/drivers/pci/pci.c
 +++ b/drivers/pci/pci.c
 @@ -703,19 +703,6 @@ void pci_update_current_state(struct pci_dev *dev, pci_power_t state)
@@ -485,10 +545,10 @@ index 085e470d1c49..b89af3841e44 100644
  };
  static DEVICE_ATTR(delete, S_IWUSR, NULL, sdev_store_delete);
 diff --git a/drivers/scsi/ufs/ufshcd.c b/drivers/scsi/ufs/ufshcd.c
-index fd8bbd2b5d0e..504d36796152 100644
+index e805802c98ea..aa5a1deef07e 100644
 --- a/drivers/scsi/ufs/ufshcd.c
 +++ b/drivers/scsi/ufs/ufshcd.c
-@@ -5371,6 +5371,9 @@ int ufshcd_shutdown(struct ufs_hba *hba)
+@@ -5400,6 +5400,9 @@ int ufshcd_shutdown(struct ufs_hba *hba)
  {
  	int ret = 0;
  
@@ -519,7 +579,7 @@ index 0669fbb0ec25..07c3c3449147 100644
  
  	/* Malloc device ID string buffer to the largest expected length,
  	 * since we can re-query it on an ioctl and a dynamic string
-@@ -1209,6 +1210,7 @@ abort:
+@@ -1209,6 +1210,7 @@ static int usblp_probe(struct usb_interface *intf,
  	kfree(usblp->readbuf);
  	kfree(usblp->statusbuf);
  	kfree(usblp->device_id_string);
@@ -677,7 +737,7 @@ index f7a9adab0b84..6f5d78b172ba 100644
  	/*
  	 * This nested loop looks more expensive than it is.
 diff --git a/mm/shmem.c b/mm/shmem.c
-index f11aec40f2e1..62668379623b 100644
+index 3a88c6622432..ba63273ebda7 100644
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
 @@ -1854,11 +1854,12 @@ static void shmem_tag_pins(struct address_space *mapping)
@@ -694,7 +754,7 @@ index f11aec40f2e1..62668379623b 100644
  restart:
  	radix_tree_for_each_slot(slot, &mapping->page_tree, &iter, start) {
  		page = radix_tree_deref_slot(slot);
-@@ -1866,19 +1867,20 @@ restart:
+@@ -1866,19 +1867,20 @@ static void shmem_tag_pins(struct address_space *mapping)
  			if (radix_tree_deref_retry(page))
  				goto restart;
  		} else if (page_count(page) - page_mapcount(page) > 1) {
@@ -724,10 +784,10 @@ index f11aec40f2e1..62668379623b 100644
  
  /*
 diff --git a/mm/slub.c b/mm/slub.c
-index c33b0e13cca7..8f5dcb0ac24f 100644
+index 191bbc3378d3..04f8561c19e0 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
-@@ -4522,7 +4522,17 @@ static ssize_t show_slab_objects(struct kmem_cache *s,
+@@ -4639,7 +4639,17 @@ static ssize_t show_slab_objects(struct kmem_cache *s,
  		}
  	}
  
@@ -746,7 +806,7 @@ index c33b0e13cca7..8f5dcb0ac24f 100644
  #ifdef CONFIG_SLUB_DEBUG
  	if (flags & SO_ALL) {
  		struct kmem_cache_node *n;
-@@ -4563,7 +4573,6 @@ static ssize_t show_slab_objects(struct kmem_cache *s,
+@@ -4680,7 +4690,6 @@ static ssize_t show_slab_objects(struct kmem_cache *s,
  			x += sprintf(buf + x, " N%d=%lu",
  					node, nodes[node]);
  #endif
@@ -755,10 +815,10 @@ index c33b0e13cca7..8f5dcb0ac24f 100644
  	return x + sprintf(buf + x, "\n");
  }
 diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index a60078de1191..42132ac2c497 100644
+index 635f1abf6192..6e17149b0983 100644
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -2209,7 +2209,7 @@ struct rtable *__ip_route_output_key_hash(struct net *net, struct flowi4 *fl4,
+@@ -2215,7 +2215,7 @@ struct rtable *__ip_route_output_key_hash(struct net *net, struct flowi4 *fl4,
  	struct fib_result res;
  	struct rtable *rth;
  	int orig_oif;
@@ -767,7 +827,7 @@ index a60078de1191..42132ac2c497 100644
  
  	res.tclassid	= 0;
  	res.fi		= NULL;
-@@ -2224,11 +2224,14 @@ struct rtable *__ip_route_output_key_hash(struct net *net, struct flowi4 *fl4,
+@@ -2230,11 +2230,14 @@ struct rtable *__ip_route_output_key_hash(struct net *net, struct flowi4 *fl4,
  
  	rcu_read_lock();
  	if (fl4->saddr) {
@@ -897,7 +957,7 @@ index 53f1b33bca4e..191fd251e8a0 100644
  	.sysctl_mem	= sysctl_sctp_mem,
  	.sysctl_rmem	= sysctl_sctp_rmem,
 diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
-index 95c8e682b491..2023802b6c77 100644
+index 2e910f418a7d..76db7a176a65 100644
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
 @@ -4816,6 +4816,9 @@ static int nl80211_del_mpath(struct sk_buff *skb, struct genl_info *info)
