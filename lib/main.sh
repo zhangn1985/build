@@ -369,6 +369,7 @@ branch2dir() {
 	[[ $1 == head ]] && echo HEAD || echo ${1##*:}
 }
 
+defaults(){
 BOOTSOURCEDIR=$BOOTDIR/$(branch2dir ${BOOTBRANCH})
 UBOOT_VERSION=$(grab_version "$SRC/cache/sources/$BOOTSOURCEDIR")
 LINUXSOURCEDIR=$KERNELDIR/$(branch2dir ${KERNELBRANCH})
@@ -384,7 +385,7 @@ CHOSEN_KERNEL=linux-image-${LINUXFAMILY}
 CHOSEN_ROOTFS=linux-${RELEASE}-root-${DEB_BRANCH}${BOARD}
 CHOSEN_DESKTOP=armbian-${RELEASE}-desktop
 CHOSEN_KSRC=linux-source-${BRANCH}-${LINUXFAMILY}
-
+}
 do_default() {
 
 start=$(date +%s)
@@ -416,7 +417,7 @@ fi
 
 compile_sunxi_tools
 install_rkbin_tools
-
+defaults
 for option in $(tr ',' ' ' <<< "$CLEAN_LEVEL"); do
 	[[ $option != sources ]] && cleaning "$option"
 done
