@@ -450,6 +450,8 @@ if [[ ! -f ${DEB_STORAGE}/armbian-config_${REVISION}_all.deb ]]; then
 	[[ ! -f $DEST/debs/armbian-firmware${FULL}_${REVISION}_all.deb ]] && compile_firmware
 fi
 
+[[ ! -f $DEST/debs/khadas-firmware_${REVISION}_all.deb ]] && compile_khadas_firmware
+
 overlayfs_wrapper "cleanup"
 
 # extract kernel version from .deb package
