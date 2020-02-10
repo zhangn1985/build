@@ -1,0 +1,44 @@
+diff --git a/scripts/package/builddeb b/scripts/package/builddeb
+index 63f38f89a17c..1e2ad5edc9bd 100755
+--- a/scripts/package/builddeb
++++ b/scripts/package/builddeb
+@@ -73,10 +73,10 @@ kernel_headers_dir="$objtree/debian/hdrtmp"
+ libc_headers_dir="$objtree/debian/headertmp"
+ dbg_dir="$objtree/debian/dbgtmp"
+ dtb_dir="$objtree/debian/dtbtmp"
+-packagename=linux-image-"$BRANCH$LOCALVERSION"
+-kernel_headers_packagename=linux-headers-"$BRANCH$LOCALVERSION"
+-dtb_packagename=linux-dtb-"$BRANCH$LOCALVERSION"
+-libc_headers_packagename=linux-libc-dev-"$BRANCH$LOCALVERSION"
++packagename=linux-image"$LOCALVERSION"
++kernel_headers_packagename=linux-headers"$LOCALVERSION"
++dtb_packagename=linux-dtb"$LOCALVERSION"
++libc_headers_packagename=linux-libc-dev
+ dbg_packagename=$packagename-dbg
+ 
+ if [ "$ARCH" = "um" ] ; then
+@@ -278,6 +278,7 @@ rm -f "$objtree/debian/hdrsrcfiles" "$objtree/debian/hdrobjfiles"
+ if [ "$ARCH" != "um" ]; then
+ 	create_package "$kernel_headers_packagename" "$kernel_headers_dir" "headers"
+ 	create_package "$dtb_packagename" "$dtb_dir" "dtb"
++	create_package "$libc_headers_packagename" "$libc_headers_dir"
+ fi
+ 
+ create_package "$packagename" "$tmpdir"
+diff --git a/scripts/package/mkdebian b/scripts/package/mkdebian
+index 0c56afcd1215..3409eab63d30 100755
+--- a/scripts/package/mkdebian
++++ b/scripts/package/mkdebian
+@@ -94,9 +94,9 @@ else
+ 	packageversion=$version-$revision
+ fi
+ sourcename=$KDEB_SOURCENAME
+-packagename=linux-image-$BRANCH$LOCALVERSION
+-kernel_headers_packagename=linux-headers-$BRANCH$LOCALVERSION
+-dtb_packagename=linux-dtb-$BRANCH$LOCALVERSION
++packagename=linux-image$LOCALVERSION
++kernel_headers_packagename=linux-headers$LOCALVERSION
++dtb_packagename=linux-dtb$LOCALVERSION
+ dbg_packagename=$packagename-dbg
+ debarch=
+ image_name=
