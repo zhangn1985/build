@@ -201,7 +201,7 @@ install_common()
 
 
 	if [[ $BUILD_DESKTOP == yes ]]; then
-		install_deb_chroot "${DEB_STORAGE}/$RELEASE/armbian-${RELEASE}-desktop_${REVISION}_all.deb"
+		# install_deb_chroot "${DEB_STORAGE}/$RELEASE/armbian-${RELEASE}-desktop_${REVISION}_all.deb"
 		# install display manager and PACKAGE_LIST_DESKTOP_FULL packages if enabled per board
 		desktop_postinstall
 	fi
