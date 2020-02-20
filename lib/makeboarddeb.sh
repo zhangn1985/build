@@ -160,17 +160,6 @@ create_board_package()
 
 	EOF
 
-	if [[ $RELEASE == bionic ]]; then
-		cat <<-EOF >> "${destination}"/DEBIAN/postinst
-		# temporally disable acceleration in Bionic due to broken mesa packages
-		if [ -n "\$(cat /etc/X11/xorg.conf.d/01-armbian-defaults.conf 2> /dev/null | grep AccelMethod)" ]; then
-		        sed -i '/\Device/,/^\[/ s/AccelMethod".*/AccelMethod"\t "none"/' /etc/X11/xorg.conf.d/01-armbian-defaults.conf
-		else
-		        sed -i '/\Device/a \\\tOption\t\t\t"AccelMethod" "none"' /etc/X11/xorg.conf.d/01-armbian-defaults.conf
-		fi
-		EOF
-	fi
-
 	# install bootscripts if they are not present. Fix upgrades from old images
 	if [[ $FORCE_BOOTSCRIPT_UPDATE == yes ]]; then
 	    cat <<-EOF >> "${destination}"/DEBIAN/postinst
@@ -217,25 +206,14 @@ create_board_package()
 
 fi
 
-	[ ! -f "/etc/network/interfaces" ] && cp /etc/network/interfaces.default /etc/network/interfaces
 	ln -sf /var/run/motd /etc/motd
 	rm -f /etc/update-motd.d/00-header /etc/update-motd.d/10-help-text
 
 	if [ ! -f "/etc/default/armbian-motd" ]; then
 		mv /etc/default/armbian-motd.dpkg-dist /etc/default/armbian-motd
 	fi
-	if [ ! -f "/etc/default/armbian-ramlog" ]; then
-		mv /etc/default/armbian-ramlog.dpkg-dist /etc/default/armbian-ramlog
-	fi
-	if [ ! -f "/etc/default/armbian-zram-config" ]; then
-		mv /etc/default/armbian-zram-config.dpkg-dist /etc/default/armbian-zram-config
-	fi
 
-	if [ -L "/usr/lib/chromium-browser/master_preferences.dpkg-dist" ]; then
-		mv /usr/lib/chromium-browser/master_preferences.dpkg-dist /usr/lib/chromium-browser/master_preferences
-	fi
-
-	systemctl --no-reload enable armbian-hardware-monitor.service armbian-hardware-optimize.service armbian-zram-config.service >/dev/null 2>&1
+	systemctl --no-reload enable armbian-hardware-monitor.service armbian-hardware-optimize.service>/dev/null 2>&1
 	exit 0
 	EOF
 
@@ -274,9 +252,6 @@ fi
 	INITRD_ARCH=$INITRD_ARCH
 	KERNEL_IMAGE_TYPE=$KERNEL_IMAGE_TYPE
 	EOF
-
-	# this is required for NFS boot to prevent deconfiguring the network on shutdown
-	sed -i 's/#no-auto-down/no-auto-down/g' "${destination}"/etc/network/interfaces.default
 
 	if [[ $LINUXFAMILY == sunxi* ]]; then
 		# add mpv config for x11 output - slow, but it works compared to no config at all
