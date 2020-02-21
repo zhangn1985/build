@@ -210,12 +210,16 @@ install_common()
 		install_deb_chroot "${DEB_STORAGE}/${CHOSEN_KERNEL/image/headers}_${LINUX_VERSION}+${SUBREVISION}_${ARCH}.deb"
 	fi
 
-	if [[ $BUILD_MINIMAL != yes ]]; then
-		install_deb_chroot "${DEB_STORAGE}/armbian-config_${REVISION}_all.deb"
-	fi
+#	if [[ $BUILD_MINIMAL != yes ]]; then
+#		install_deb_chroot "${DEB_STORAGE}/armbian-config_${REVISION}_all.deb"
+#	fi
 
-	if [[ -f ${DEB_STORAGE}/armbian-firmware_${REVISION}_all.deb ]]; then
-		install_deb_chroot "${DEB_STORAGE}/armbian-firmware_${REVISION}_all.deb"
+#	if [[ -f ${DEB_STORAGE}/armbian-firmware_${REVISION}_all.deb ]]; then
+#		install_deb_chroot "${DEB_STORAGE}/armbian-firmware_${REVISION}_all.deb"
+#	fi
+
+	if [[ -f ${DEB_STORAGE}/khadas-firmware_${REVISION}_all.deb ]]; then
+		install_deb_chroot "${DEB_STORAGE}/khadas-firmware_${REVISION}_all.deb"
 	fi
 
 	if [[ -f ${DEB_STORAGE}/${CHOSEN_KERNEL/image/dtb}_${LINUX_VERSION}+${SUBREVISION}_${ARCH}.deb ]]; then
