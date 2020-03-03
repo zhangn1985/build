@@ -1,0 +1,8 @@
+ARCH=arm64
+ATF_COMPILE="no"
+BOOTBRANCH='tag:v2020.01'
+KERNELBRANCH='branch:linux-5.5.y'
+KERNELPATCHDIR=khadas
+BOOTPATCHDIR=khadas
+LINUXFAMILY=khadas
+BOOTENV_FILE='khadas-default.txt'
