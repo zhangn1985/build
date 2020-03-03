@@ -1,4 +1,5 @@
 ARCH=arm64
+OFFSET=16
 ATF_COMPILE="no"
 BOOTBRANCH='tag:v2020.01'
 KERNELBRANCH='branch:linux-5.5.y'
