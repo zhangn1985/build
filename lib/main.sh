@@ -387,6 +387,7 @@ CHOSEN_KERNEL=linux-image-${LINUXFAMILY}
 CHOSEN_ROOTFS=linux-${RELEASE}-root-${DEB_BRANCH}${BOARD}
 CHOSEN_DESKTOP=armbian-${RELEASE}-desktop
 CHOSEN_KSRC=linux-source-${BRANCH}-${LINUXFAMILY}
+CHOSEN_FIRMWARE=armbian-firmware-${FWNAME:-${LINUXFAMILY}}-${BRANCH}
 }
 do_default() {
 
@@ -415,6 +416,12 @@ if [[ $IGNORE_UPDATES != yes ]]; then
 	fetch_from_repo "https://github.com/armbian/testings" "testing-reports" "branch:master"
 	fetch_from_repo "https://github.com/rockchip-linux/rkbin" "rkbin" "branch:master"
 	fetch_from_repo "https://github.com/zhangn1985/kvim-blobs" "khadas-blobs" "branch:master"
+	fetch_from_repo "https://github.com/armbian/firmware" "armbian-firmware-git" "branch:master"
+	if [[ $USE_MAINLINE_GOOGLE_MIRROR == yes ]]; then
+		fetch_from_repo "https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware.git" "linux-firmware-git" "branch:master"
+	else
+		fetch_from_repo "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git" "linux-firmware-git" "branch:master"
+	fi
 fi
 
 compile_sunxi_tools
@@ -441,13 +448,10 @@ fi
 # Pack armbian-config and armbian-firmware
 if [[ ! -f ${DEB_STORAGE}/armbian-config_${REVISION}_all.deb ]]; then
 	compile_armbian-config
+fi
 
-	FULL=""
-	REPLACE="-full"
-	[[ ! -f $DEST/debs/armbian-firmware_${REVISION}_all.deb ]] && compile_firmware
-	FULL="-full"
-	REPLACE=""
-	[[ ! -f $DEST/debs/armbian-firmware${FULL}_${REVISION}_all.deb ]] && compile_firmware
+if [[ ! -f ${DEB_STORAGE}/${CHOSEN_FIRMWARE}_${REVISION}_all.deb ]]; then
+	compile_firmware
 fi
 
 overlayfs_wrapper "cleanup"
