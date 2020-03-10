@@ -12,7 +12,6 @@
 # compile_uboot
 # compile_kernel
 # compile_firmware
-# compile_khadas_firmware
 # compile_ambian-config
 # compile_sunxi_tools
 # install_rkbin_tools
@@ -478,33 +477,6 @@ compile_firmware()
 	fakeroot dpkg -b armbian-firmware${FULL}_${REVISION}_all >> $DEST/debug/install.log 2>&1
 	mv armbian-firmware${FULL}_${REVISION}_all armbian-firmware${FULL}
 	mv armbian-firmware${FULL}_${REVISION}_all.deb ${DEB_STORAGE}/
-}
-
-compile_khadas_firmware()
-{
-	local installdir=${SRC}/cache/sources/khadas-firmware_${REVISION}_all
-	mkdir -p ${installdir}/lib/firmware/
-	cp -rpf $SRC/cache/sources/khadas-blobs/firmware/* ${installdir}/lib/firmware/
-
-	cd $installdir
-	mkdir -p DEBIAN
-
-	cat <<-END > DEBIAN/control
-	Package: khadas-firmware
-	Version: $REVISION
-	Architecture: all
-	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
-	Installed-Size: 1
-	Replace: linux-firmware, firmware-brcm80211, armbian-firmware, armbian-firmware-full
-	Section: kernel
-	Priority: optional
-	Description: Khadas devices firmware
-	END
-
-	cd $SRC/cache/sources
-	fakeroot dpkg -b khadas-firmware_${REVISION}_all >> $DEST/debug/install.log 2>&1
-	rm -rf khadas-firmware_${REVISION}_all
-	mv khadas-firmware_${REVISION}_all.deb ${DEB_STORAGE}/
 }
 
 
