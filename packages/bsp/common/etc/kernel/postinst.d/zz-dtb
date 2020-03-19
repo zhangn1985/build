@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -d /boot/dtb.old ]; then rm -rf /boot/dtb.old; fi
+if [ -d /boot/dtb ]; then mv /boot/dtb /boot/dtb.old; fi
+
+ln -s /usr/lib/linux-image-$1/ /boot/dtb || mv /usr/lib/linux-image-$1/ /boot/dtb
