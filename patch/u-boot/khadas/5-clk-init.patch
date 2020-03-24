@@ -1,0 +1,58 @@
+diff --git a/arch/arm/mach-rockchip/Kconfig b/arch/arm/mach-rockchip/Kconfig
+index b689a420bd..1661713c6c 100644
+--- a/arch/arm/mach-rockchip/Kconfig
++++ b/arch/arm/mach-rockchip/Kconfig
+@@ -199,6 +199,9 @@ config ROCKCHIP_RK3368
+ 	  On-chip peripherals include Gigabit Ethernet, USB2 host and OTG, SDIO,
+ 	  I2S, UARTs, SPI, I2C and PWMs.
+ 
++config RK3399_CLK_FIX
++	bool "fix Rockchip RK3399 clk init"
++
+ config ROCKCHIP_RK3399
+ 	bool "Support Rockchip RK3399"
+ 	select ARM64
+@@ -228,6 +231,7 @@ config ROCKCHIP_RK3399
+ 	select DM_PMIC
+ 	select DM_REGULATOR_FIXED
+ 	select BOARD_LATE_INIT
++	select RK3399_CLK_FIX
+ 	imply ROCKCHIP_COMMON_BOARD
+ 	imply ROCKCHIP_SDRAM_COMMON
+ 	imply SPL_ROCKCHIP_COMMON_BOARD
+diff --git a/drivers/clk/rockchip/clk_rk3399.c b/drivers/clk/rockchip/clk_rk3399.c
+index 9020a9f202..abf1bb0981 100644
+--- a/drivers/clk/rockchip/clk_rk3399.c
++++ b/drivers/clk/rockchip/clk_rk3399.c
+@@ -46,10 +46,11 @@ struct pll_div {
+ 	.fbdiv = (u32)((u64)hz * _refdiv * _postdiv1 * _postdiv2 / OSC_HZ),\
+ 	.postdiv1 = _postdiv1, .postdiv2 = _postdiv2};
+ 
+-#if defined(CONFIG_SPL_BUILD)
++#if defined(CONFIG_SPL_BUILD) || defined(CONFIG_RK3399_CLK_FIX)
+ static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 2, 2, 1);
+ static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 2, 2);
+-#else
++#endif
++#ifndef CONFIG_SPL_BUILD
+ static const struct pll_div ppll_init_cfg = PLL_DIVISORS(PPLL_HZ, 2, 2, 1);
+ #endif
+ 
+@@ -1070,7 +1071,7 @@ static struct clk_ops rk3399_clk_ops = {
+ #endif
+ };
+ 
+-#ifdef CONFIG_SPL_BUILD
++#if defined(CONFIG_SPL_BUILD) || defined(CONFIG_RK3399_CLK_FIX)
+ static void rkclk_init(struct rk3399_cru *cru)
+ {
+ 	u32 aclk_div;
+@@ -1152,7 +1153,7 @@ static void rkclk_init(struct rk3399_cru *cru)
+ 
+ static int rk3399_clk_probe(struct udevice *dev)
+ {
+-#ifdef CONFIG_SPL_BUILD
++#if defined(CONFIG_SPL_BUILD) || defined(CONFIG_RK3399_CLK_FIX)
+ 	struct rk3399_clk_priv *priv = dev_get_priv(dev);
+ 
+ #if CONFIG_IS_ENABLED(OF_PLATDATA)
