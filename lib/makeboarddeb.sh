@@ -112,26 +112,11 @@ create_board_package()
 	[ -f "/lib/systemd/system/resize2fs.service" ] && rm /lib/systemd/system/resize2fs.service
 	[ -f "/usr/lib/armbian/apt-updates" ] && rm /usr/lib/armbian/apt-updates
 	[ -f "/usr/lib/armbian/firstrun-config.sh" ] && rm /usr/lib/armbian/firstrun-config.sh
-	dpkg-divert --quiet --package linux-${RELEASE}-root-${DEB_BRANCH}${BOARD} --add --rename --divert /etc/mpv/mpv-dist.conf /etc/mpv/mpv.conf
+
 	exit 0
 	EOF
 
 	chmod 755 "${destination}"/DEBIAN/preinst
-
-	# postrm script
-	cat <<-EOF > "${destination}"/DEBIAN/postrm
-	#!/bin/sh
-	if [ remove = "\$1" ] || [ abort-install = "\$1" ]; then
-
-	    dpkg-divert --quiet --package linux-${RELEASE}-root-${DEB_BRANCH}${BOARD} --remove --rename	--divert /etc/mpv/mpv-dist.conf /etc/mpv/mpv.conf
-	    systemctl disable armbian-hardware-monitor.service armbian-hardware-optimize.service >/dev/null 2>&1
-	    systemctl disable armbian-zram-config.service armbian-ramlog.service >/dev/null 2>&1
-
-	fi
-	exit 0
-	EOF
-
-	chmod 755 "${destination}"/DEBIAN/postrm
 
 	# set up post install script
 	cat <<-EOF > "${destination}"/DEBIAN/postinst
@@ -140,14 +125,6 @@ create_board_package()
 	# ${BOARD} BSP post installation script
 	#
 
-	systemctl --no-reload enable armbian-ramlog.service
-
-	# check if it was disabled in config and disable in new service
-	if [ -n "\$(grep -w '^ENABLED=false' /etc/default/log2ram 2> /dev/null)" ]; then
-
-	     sed -i "s/^ENABLED=.*/ENABLED=false/" /etc/default/armbian-ramlog
-
-	fi
 
 	# fix boot delay "waiting for suspend/resume device"
 	if [ -f "/etc/initramfs-tools/initramfs.conf" ]; then
@@ -213,7 +190,6 @@ fi
 		mv /etc/default/armbian-motd.dpkg-dist /etc/default/armbian-motd
 	fi
 
-	systemctl --no-reload enable armbian-hardware-monitor.service armbian-hardware-optimize.service>/dev/null 2>&1
 	exit 0
 	EOF
 
