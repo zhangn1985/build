@@ -1,0 +1,30 @@
+From 671d8eefc08daa047c1a3fcd6c53129a2ab5a94e Mon Sep 17 00:00:00 2001
+From: Zhang Ning <832666+zhangn1985@users.noreply.github.com>
+Date: Mon, 13 Apr 2020 12:23:57 +0800
+Subject: [PATCH] khadas: default bootargs for emmc boot
+
+Signed-off-by: Zhang Ning <832666+zhangn1985@users.noreply.github.com>
+---
+ include/env_default.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/include/env_default.h b/include/env_default.h
+index 56a8bae39a..09cfb89494 100644
+--- a/include/env_default.h
++++ b/include/env_default.h
+@@ -107,6 +107,12 @@ const uchar default_environment[] = {
+ #if defined(CONFIG_BOOTCOUNT_BOOTLIMIT) && (CONFIG_BOOTCOUNT_BOOTLIMIT > 0)
+ 	"bootlimit="	__stringify(CONFIG_BOOTCOUNT_BOOTLIMIT)"\0"
+ #endif
++#ifdef CONFIG_ARCH_ROCKCHIP
++	"emmc_bootargs=root=/dev/mmcblk0p1 rootwait rootfstype=ext4 console=ttyFIQ0,1500000 consoleblank=0 coherent_pool=2M\0"
++#endif
++#ifdef CONFIG_ARCH_MESON
++	"emmc_bootargs=root=/dev/mmcblk1p1 rootwait rootfstype=ext4 console=ttyAML0,115200 consoleblank=0 coherent_pool=2M\0"
++#endif
+ #ifdef	CONFIG_EXTRA_ENV_SETTINGS
+ 	CONFIG_EXTRA_ENV_SETTINGS
+ #endif
+-- 
+2.25.0
+
