@@ -126,15 +126,6 @@ create_board_package()
 	#
 
 
-	# fix boot delay "waiting for suspend/resume device"
-	if [ -f "/etc/initramfs-tools/initramfs.conf" ]; then
-
-	    if ! grep --quiet "RESUME=none" /etc/initramfs-tools/initramfs.conf; then
-	         echo "RESUME=none" >> /etc/initramfs-tools/initramfs.conf
-	    fi
-
-	fi
-
 	EOF
 
 #	if [[ $RELEASE == bionic ]]; then
