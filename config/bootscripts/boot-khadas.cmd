@@ -19,7 +19,7 @@ if test "${devtype}" = "mmc"; then part uuid mmc ${devnum}:1 partuuid; fi
 
 if test "${console}" = "display"; then setenv consoleargs "console=tty1"; fi
 
-setenv bootargs "${emmc_bootargs} ${consoleargs} loglevel=${verbosity} ubootpart=${partuuid} usb-storage.quirks=${usbstoragequirks} ${extraargs} ${extraboardargs}"
+setenv bootargs "root=${rootdev} rootwait rootfstype=${rootfstype} ${consoleargs} loglevel=${verbosity} ubootpart=${partuuid} usb-storage.quirks=${usbstoragequirks} ${extraargs} ${extraboardargs}"
 
 if test "${docker_optimizations}" = "on"; then setenv bootargs "${bootargs} cgroup_enable=memory swapaccount=1"; fi
 
