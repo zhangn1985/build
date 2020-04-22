@@ -196,7 +196,7 @@ install_common()
 	EOF
 
 	# install kernel and u-boot packages
-	install_deb_chroot "${DEB_STORAGE}/${CHOSEN_KERNEL}_${LINUX_VERSION}+${SUBREVISION}_${ARCH}.deb"
+	install_deb_chroot "${DEB_STORAGE}/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb"
 	install_deb_chroot "${DEB_STORAGE}/${CHOSEN_UBOOT}_${UBOOT_VERSION}+${SUBREVISION}_${ARCH}.deb"
 
 
@@ -207,7 +207,7 @@ install_common()
 	fi
 
 	if [[ $INSTALL_HEADERS == yes ]]; then
-		install_deb_chroot "${DEB_STORAGE}/${CHOSEN_KERNEL/image/headers}_${LINUX_VERSION}+${SUBREVISION}_${ARCH}.deb"
+		install_deb_chroot "${DEB_STORAGE}/${CHOSEN_KERNEL/image/headers}_${REVISION}_${ARCH}.deb"
 	fi
 
 	if [[ $BUILD_MINIMAL != yes ]]; then
@@ -218,8 +218,8 @@ install_common()
 		install_deb_chroot "${DEB_STORAGE}/${CHOSEN_FIRMWARE}_${REVISION}_all.deb"
 	fi
 
-	if [[ -f ${DEB_STORAGE}/${CHOSEN_KERNEL/image/dtb}_${LINUX_VERSION}+${SUBREVISION}_${ARCH}.deb ]]; then
-		install_deb_chroot "${DEB_STORAGE}/${CHOSEN_KERNEL/image/dtb}_${LINUX_VERSION}+${SUBREVISION}_${ARCH}.deb"
+	if [[ -f ${DEB_STORAGE}/${CHOSEN_KERNEL/image/dtb}_${REVISION}_${ARCH}.deb ]]; then
+		install_deb_chroot "${DEB_STORAGE}/${CHOSEN_KERNEL/image/dtb}_${REVISION}_${ARCH}.deb"
 	fi
 
 	if [[ -f ${DEB_STORAGE}/${CHOSEN_KSRC}_${REVISION}_all.deb && $INSTALL_KSRC == yes ]]; then
