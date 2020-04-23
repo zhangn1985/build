@@ -139,6 +139,18 @@ create_rootfs_cache()
 	else
 		display_alert "... remote not found" "Creating new rootfs cache for $RELEASE" "info"
 
+		case ${RELEASE} in
+			stretch|buster|bullseye)
+			# need to install debian's debootstrap
+			display_alert "... debootstrap for debian" "reinstall debian's debootstrap" "info"
+			rm ${SRC}/cache/debootstrap.deb
+			wget http://${APT_MIRROR}/pool/main/d/debootstrap/debootstrap_1.0.123_all.deb -O ${SRC}/cache/debootstrap.deb
+			dpkg -i ${SRC}/cache/debootstrap.deb
+			;;
+			*)
+			;;
+		esac
+
 		# stage: debootstrap base system
 		if [[ $NO_APT_CACHER != yes ]]; then
 			# apt-cacher-ng apt proxy parameter
@@ -199,13 +211,12 @@ create_rootfs_cache()
 		eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "update-locale LANG=$DEST_LANG LANGUAGE=$DEST_LANG LC_MESSAGES=$DEST_LANG"' \
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
-		if [[ x${USE_ARMBIAN_CONFIG} != x || ${USE_ARMBIAN_CONFIG} = "yes" ]]; then
 		if [[ -f $SDCARD/etc/default/console-setup ]]; then
 			sed -e 's/CHARMAP=.*/CHARMAP="UTF-8"/' -e 's/FONTSIZE=.*/FONTSIZE="8x16"/' \
 				-e 's/CODESET=.*/CODESET="guess"/' -i $SDCARD/etc/default/console-setup
 			eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "setupcon --save"'
 		fi
-		fi
+
 		# stage: create apt sources list
 		create_sources_list "$RELEASE" "$SDCARD/"
 
