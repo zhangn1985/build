@@ -7,7 +7,8 @@ case `uname -m` in
 	*) exit 1;;
 esac
 
-if [ -f /boot/uImage ]; then rm /boot/uImage; fi
+if [ -f /boot/uImage.old ]; then rm /boot/uImage.old; fi
+if [ -f /boot/uImage ]; then mv /boot/uImage /boot/uImage.old; fi
 ln -s $2 /boot/uImage
 
 echo "update initrd: Converting to u-boot format"
