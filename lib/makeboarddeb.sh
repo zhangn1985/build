@@ -112,11 +112,26 @@ create_board_package()
 	[ -f "/lib/systemd/system/resize2fs.service" ] && rm /lib/systemd/system/resize2fs.service
 	[ -f "/usr/lib/armbian/apt-updates" ] && rm /usr/lib/armbian/apt-updates
 	[ -f "/usr/lib/armbian/firstrun-config.sh" ] && rm /usr/lib/armbian/firstrun-config.sh
-
+	dpkg-divert --quiet --package linux-${RELEASE}-root-${DEB_BRANCH}${BOARD} --add --rename --divert /etc/mpv/mpv-dist.conf /etc/mpv/mpv.conf
 	exit 0
 	EOF
 
 	chmod 755 "${destination}"/DEBIAN/preinst
+
+	# postrm script
+	cat <<-EOF > "${destination}"/DEBIAN/postrm
+	#!/bin/sh
+	if [ remove = "\$1" ] || [ abort-install = "\$1" ]; then
+
+	    dpkg-divert --quiet --package linux-${RELEASE}-root-${DEB_BRANCH}${BOARD} --remove --rename	--divert /etc/mpv/mpv-dist.conf /etc/mpv/mpv.conf
+	    systemctl disable armbian-hardware-monitor.service armbian-hardware-optimize.service >/dev/null 2>&1
+	    systemctl disable armbian-zram-config.service armbian-ramlog.service >/dev/null 2>&1
+
+	fi
+	exit 0
+	EOF
+
+	chmod 755 "${destination}"/DEBIAN/postrm
 
 	# set up post install script
 	cat <<-EOF > "${destination}"/DEBIAN/postinst
@@ -125,6 +140,23 @@ create_board_package()
 	# ${BOARD} BSP post installation script
 	#
 
+	systemctl --no-reload enable armbian-ramlog.service
+
+	# check if it was disabled in config and disable in new service
+	if [ -n "\$(grep -w '^ENABLED=false' /etc/default/log2ram 2> /dev/null)" ]; then
+
+	     sed -i "s/^ENABLED=.*/ENABLED=false/" /etc/default/armbian-ramlog
+
+	fi
+
+	# fix boot delay "waiting for suspend/resume device"
+	if [ -f "/etc/initramfs-tools/initramfs.conf" ]; then
+
+	    if ! grep --quiet "RESUME=none" /etc/initramfs-tools/initramfs.conf; then
+	         echo "RESUME=none" >> /etc/initramfs-tools/initramfs.conf
+	    fi
+
+	fi
 
 	EOF
 
@@ -184,13 +216,25 @@ create_board_package()
 
 fi
 
+	[ ! -f "/etc/network/interfaces" ] && cp /etc/network/interfaces.default /etc/network/interfaces
 	ln -sf /var/run/motd /etc/motd
 	rm -f /etc/update-motd.d/00-header /etc/update-motd.d/10-help-text
 
 	if [ ! -f "/etc/default/armbian-motd" ]; then
 		mv /etc/default/armbian-motd.dpkg-dist /etc/default/armbian-motd
 	fi
+	if [ ! -f "/etc/default/armbian-ramlog" ]; then
+		mv /etc/default/armbian-ramlog.dpkg-dist /etc/default/armbian-ramlog
+	fi
+	if [ ! -f "/etc/default/armbian-zram-config" ]; then
+		mv /etc/default/armbian-zram-config.dpkg-dist /etc/default/armbian-zram-config
+	fi
 
+	if [ -L "/usr/lib/chromium-browser/master_preferences.dpkg-dist" ]; then
+		mv /usr/lib/chromium-browser/master_preferences.dpkg-dist /usr/lib/chromium-browser/master_preferences
+	fi
+
+	systemctl --no-reload enable armbian-hardware-monitor.service armbian-hardware-optimize.service armbian-zram-config.service >/dev/null 2>&1
 	exit 0
 	EOF
 
@@ -229,6 +273,9 @@ fi
 	INITRD_ARCH=$INITRD_ARCH
 	KERNEL_IMAGE_TYPE=$KERNEL_IMAGE_TYPE
 	EOF
+
+	# this is required for NFS boot to prevent deconfiguring the network on shutdown
+	sed -i 's/#no-auto-down/no-auto-down/g' "${destination}"/etc/network/interfaces.default
 
 	if [[ $LINUXFAMILY == sunxi* ]]; then
 		# add mpv config for x11 output - slow, but it works compared to no config at all

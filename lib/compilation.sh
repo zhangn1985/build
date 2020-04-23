@@ -405,7 +405,7 @@ compile_kernel()
 
 	cat <<-EOF > $sources_pkg_dir/DEBIAN/control
 	Package: linux-source-${version}-${BRANCH}-${LINUXFAMILY}
-	Version: ${version}-${BRANCH}-${LINUXFAMILY}+${SUBREVISION}
+	Version: ${version}-${BRANCH}-${LINUXFAMILY}+${REVISION}
 	Architecture: all
 	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
 	Section: kernel
