@@ -108,7 +108,7 @@ create_rootfs_cache()
 	for ((n=0;n<${cycles};n++)); do
 
 		local packages_hash=$(get_package_list_hash "$(($ROOTFSCACHE_VERSION - $n))")
-		local cache_type=$(if [[ ${BUILD_DESKTOP} == yes  ]]; then echo "desktop"; elif [[ ${BUILD_MINIMAL} == yes  ]]; then echo "minimal"; else echo "cli";fi)
+		local cache_type=$(if [[ ${LOCAL_ROOTFS_CACHE} == yes  ]]; then echo "local"; elif [[ ${BUILD_DESKTOP} == yes  ]]; then echo "desktop"; elif [[ ${BUILD_MINIMAL} == yes  ]]; then echo "minimal"; else echo "cli";fi)
 		local cache_name=${RELEASE}-${cache_type}-${ARCH}.$packages_hash.tar.lz4
 		local cache_fname=${SRC}/cache/rootfs/${cache_name}
 		local display_name=${RELEASE}-${cache_type}-${ARCH}.${packages_hash:0:3}...${packages_hash:29}.tar.lz4
@@ -161,11 +161,14 @@ create_rootfs_cache()
 
 		[[ ${PIPESTATUS[0]} -ne 0 || ! -f $SDCARD/debootstrap/debootstrap ]] && exit_with_error "Debootstrap base system first stage failed"
 
+		if [[ x${USE_ARMBIAN_CONFIG} == x || ${USE_ARMBIAN_CONFIG} = "yes" ]]; then
+
 		cp /usr/bin/$QEMU_BINARY $SDCARD/usr/bin/
 
 		mkdir -p $SDCARD/usr/share/keyrings/
 		cp /usr/share/keyrings/*-archive-keyring.gpg $SDCARD/usr/share/keyrings/
 
+		fi
 		display_alert "Installing base system" "Stage 2/2" "info"
 		eval 'chroot $SDCARD /bin/bash -c "/debootstrap/debootstrap --second-stage"' \
 			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/debootstrap.log'} \
@@ -176,6 +179,7 @@ create_rootfs_cache()
 
 		mount_chroot "$SDCARD"
 
+		if [[ x${USE_ARMBIAN_CONFIG} == x || ${USE_ARMBIAN_CONFIG} = "yes" ]]; then
 		# policy-rc.d script prevents starting or reloading services during image creation
 		printf '#!/bin/sh\nexit 101' > $SDCARD/usr/sbin/policy-rc.d
 		chroot $SDCARD /bin/bash -c "dpkg-divert --quiet --local --rename --add /sbin/initctl"
@@ -185,6 +189,7 @@ create_rootfs_cache()
 		chmod 755 $SDCARD/usr/sbin/policy-rc.d
 		chmod 755 $SDCARD/sbin/initctl
 		chmod 755 $SDCARD/sbin/start-stop-daemon
+		fi
 
 		# stage: configure language and locales
 		display_alert "Configuring locales" "$DEST_LANG" "info"
@@ -194,20 +199,23 @@ create_rootfs_cache()
 		eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "update-locale LANG=$DEST_LANG LANGUAGE=$DEST_LANG LC_MESSAGES=$DEST_LANG"' \
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
+		if [[ x${USE_ARMBIAN_CONFIG} != x || ${USE_ARMBIAN_CONFIG} = "yes" ]]; then
 		if [[ -f $SDCARD/etc/default/console-setup ]]; then
 			sed -e 's/CHARMAP=.*/CHARMAP="UTF-8"/' -e 's/FONTSIZE=.*/FONTSIZE="8x16"/' \
 				-e 's/CODESET=.*/CODESET="guess"/' -i $SDCARD/etc/default/console-setup
 			eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "setupcon --save"'
 		fi
-
+		fi
 		# stage: create apt sources list
 		create_sources_list "$RELEASE" "$SDCARD/"
 
+		if [[ x${USE_ARMBIAN_CONFIG} == x || ${USE_ARMBIAN_CONFIG} = "yes" ]]; then
 		# add armhf arhitecture to arm64
 		[[ $ARCH == arm64 ]] && eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "dpkg --add-architecture armhf"'
 
 		# this should fix resolvconf installation failure in some cases
 		chroot $SDCARD /bin/bash -c 'echo "resolvconf resolvconf/linkify-resolvconf boolean false" | debconf-set-selections'
+		fi
 
 		# stage: update packages list
 		display_alert "Updating package list" "$RELEASE" "info"
@@ -546,6 +554,7 @@ prepare_partitions()
 #
 update_initramfs()
 {
+	if [[ x${USE_ARMBIAN_CONFIG} == x || ${USE_ARMBIAN_CONFIG} = "yes" ]]; then
 	local chroot_target=$1
 	update_initramfs_cmd="update-initramfs -uv -k ${VER}-${LINUXFAMILY}"
 	display_alert "Updating initramfs..." "$update_initramfs_cmd" ""
@@ -557,7 +566,7 @@ update_initramfs()
 
 	umount_chroot "$chroot_target/"
 	rm $chroot_target/usr/bin/$QEMU_BINARY
-
+	fi
 } #############################################################################
 
 # create_image
