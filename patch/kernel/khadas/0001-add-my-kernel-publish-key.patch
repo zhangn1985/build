@@ -1,0 +1,51 @@
+From 59752c3887b1927bd72ae75bf8c3f65f9741a480 Mon Sep 17 00:00:00 2001
+From: Zhang Ning <832666+zhangn1985@users.noreply.github.com>
+Date: Tue, 14 Apr 2020 13:26:15 +0800
+Subject: [PATCH] add my kernel publish key
+
+Signed-off-by: Zhang Ning <832666+zhangn1985@users.noreply.github.com>
+---
+ certs/kernel_key.pem | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+ create mode 100644 certs/kernel_key.pem
+
+diff --git a/certs/kernel_key.pem b/certs/kernel_key.pem
+new file mode 100644
+index 000000000000..e65ded635e5a
+--- /dev/null
++++ b/certs/kernel_key.pem
+@@ -0,0 +1,31 @@
++-----BEGIN CERTIFICATE-----
++MIIFVzCCAz+gAwIBAgIUGz/jOL+VVI/OF7kxI7tQTk3kMyowDQYJKoZIhvcNAQEL
++BQAwNTEzMDEGA1UEAwwqa2VybmVsIGtleSBmb3IgemhhbmduMTk4NS9idWlsZEBn
++aXRodWIuY29tMCAXDTIwMDQxNDAwNTUwNloYDzIxMjAwMzIxMDA1NTA2WjA1MTMw
++MQYDVQQDDCprZXJuZWwga2V5IGZvciB6aGFuZ24xOTg1L2J1aWxkQGdpdGh1Yi5j
++b20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDN7pNLIPkoVpdc0B9C
++tbtHmltoYagJojeyTEAwr2j6ot5j8qJsNWqrPoKmZN+31/wlcb+4161JC1khzrei
++sIsY4770INS1iwwYNyIKGN55jDJCxUkCPzpH7o9++qiFZi8hwG+SG47gXppqzFAr
++cBMhPtqn+aWRQuUnl6yv7Cox8XM1ghnx2KrXELbqZfBvjvv8aAxMNS5QH4q+eZou
++1DH9TVrXo8zpRZWtY9bB4DwloFRJqWaqP4TZbnbI8Lg3/OlkMalXQXn9zEBW39cD
++TD5UH4s5Xc7xuK+z7Kjv130Kmq25krz3koL/xO1kBc0V5PEKYJuMi/rPf7rFF1bh
++Q6hVzepnyYL1dgsCYQjzaLuwVbMlbMeCsa2o1jsUSNSTkrXNC//FTuAXzotqp5aa
++UZRHTxaBzhiijJbqRPnuqlyB1hY7l6lMHGG0F/RJMOf/tx9XMknjdyx6ABuOyHJT
++TERoy5PoqoDuNIXNnNPMAdlQKk3Z6fEiLkGSvfwaItvZvUQnybaTXCPXGTSqdOQu
++l86drjNForbINjy5ruNTfoj4vmh1WLcthgfy2SCM1BmWnLmJM3UG83ZvKC4aa8U+
+++bB35RuoLCXETLJUeTMCpirtGAtym9FxexZPkxPewi117i4EuI5PLrUnKCVrloiB
++xZYoqOcNbUjyqRntWv+lrEy+WQIDAQABo10wWzAMBgNVHRMBAf8EAjAAMAsGA1Ud
++DwQEAwIHgDAdBgNVHQ4EFgQUnVyNaBOOM2iYveWscZzRrZxBWpkwHwYDVR0jBBgw
++FoAUnVyNaBOOM2iYveWscZzRrZxBWpkwDQYJKoZIhvcNAQELBQADggIBAIio6CZl
++E+j/+ulZU7bRjUipI4wrelepsiQIlluLKEP8/p0UqIMdvM4+it9b+WPiZWSHEtnP
++Cbn/dtWv87jMzfZdTOnynD4Nq5wZUtsZhMtR1/jVeccQqjDybrJWH+wX7Z5n10Nc
++kCwY6M6iJNFn9/ob/kp0ElSR7pJWI5m31aYGgiE4tNWvvgUZIJMtHGtQLzhDDYlY
++0+mcU1h77wSPXrGf0WJ2J4A8hO/OpnHM9TWLArffNYMlknHlfLv3qSu0MlNyBQ56
++PWMJko8h1rRbnlXOyYZitfSOALeovXQ3EBzKr+rMhk3JvyvjBhKGS5uNRP7Ea0MD
++syNkAzatqivw0/yjm7l8U388h9zZztTORs5TT02hQ/2NRzbEoC8tYSmYdICH68tE
++fNYOTl/Ryq4lqNNsNKWa4/reFUKWum4/nwlCfO/okTRpzGVtsFsmGmldJWtb4MN7
++7FvNqMvowWxRL5PSzQ9WxBa28poOpSxwu+KRflkNmHAR+83zeTNv2s8/3UqLADLS
++3rIsibIOCnTRLGqp89eNE0Jl7LYQo7suBofJ/b0nmy72g+XGeMhomA/s34ON3fMB
++R/U34BHXsgaQ6m6zU+EIQKI6JcOjiwccNy3xKez+UhOdkinzk0EpEMm0isJ5yYU7
++ETcvS2OO0N1EcAI+WJnIEKSiYFzi2kJErbrz
++-----END CERTIFICATE-----
+-- 
+2.25.0
+
