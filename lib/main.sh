@@ -370,7 +370,9 @@ branch2dir() {
 	[[ $1 == head ]] && echo HEAD || echo ${1##*:}
 }
 
+defaults(){
 BOOTSOURCEDIR=$BOOTDIR/$(branch2dir ${BOOTBRANCH})
+UBOOT_VERSION=$(grab_version "$SRC/cache/sources/$BOOTSOURCEDIR")
 LINUXSOURCEDIR=$KERNELDIR/$(branch2dir ${KERNELBRANCH})
 [[ -n $ATFSOURCE ]] && ATFSOURCEDIR=$ATFDIR/$(branch2dir ${ATFBRANCH})
 
@@ -378,12 +380,12 @@ LINUXSOURCEDIR=$KERNELDIR/$(branch2dir ${KERNELBRANCH})
 DEB_BRANCH=${BRANCH//default}
 # if not empty, append hyphen
 DEB_BRANCH=${DEB_BRANCH:+${DEB_BRANCH}-}
-CHOSEN_UBOOT=linux-u-boot-${DEB_BRANCH}${BOARD}
+CHOSEN_UBOOT=linux-u-boot-${BOARD}
 CHOSEN_KERNEL=linux-image-${DEB_BRANCH}${LINUXFAMILY}
 CHOSEN_ROOTFS=linux-${RELEASE}-root-${DEB_BRANCH}${BOARD}
 CHOSEN_DESKTOP=armbian-${RELEASE}-desktop
 CHOSEN_KSRC=linux-source-${BRANCH}-${LINUXFAMILY}
-
+}
 do_default() {
 
 start=$(date +%s)
@@ -410,17 +412,19 @@ if [[ $IGNORE_UPDATES != yes ]]; then
 	fetch_from_repo "https://github.com/armbian/odroidc2-blobs" "odroidc2-blobs" "branch:master"
 	fetch_from_repo "https://github.com/armbian/testings" "testing-reports" "branch:master"
 	fetch_from_repo "https://gitlab.com/superna9999/amlogic-boot-fip" "amlogic-boot-fip" "branch:master"
+	fetch_from_repo "https://github.com/rockchip-linux/rkbin" "rkbin" "branch:master"
+	fetch_from_repo "https://github.com/zhangn1985/kvim-blobs" "khadas-blobs" "branch:master"
 fi
 
 compile_sunxi_tools
 install_rkbin_tools
-
+defaults
 for option in $(tr ',' ' ' <<< "$CLEAN_LEVEL"); do
 	[[ $option != sources ]] && cleaning "$option"
 done
 
 # Compile u-boot if packed .deb does not exist or use the one from repository
-if [[ ! -f "${DEB_STORAGE}"/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb ]]; then
+if [[ ! -f ${DEB_STORAGE}/${CHOSEN_UBOOT}_${UBOOT_VERSION}+${SUBREVISION}_${ARCH}.deb ]]; then
 
 	if [[ -n "${ATFSOURCE}" && "${REPOSITORY_INSTALL}" != *u-boot* ]]; then
 		compile_atf

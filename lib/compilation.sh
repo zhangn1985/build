@@ -130,7 +130,7 @@ compile_uboot()
 	[[ -n $toolchain2 ]] && display_alert "Additional compiler version" "${toolchain2_type}gcc $(eval env PATH=$toolchain:$toolchain2:$PATH ${toolchain2_type}gcc -dumpversion)" "info"
 
 	# create directory structure for the .deb package
-	local uboot_name=${CHOSEN_UBOOT}_${REVISION}_${ARCH}
+	local uboot_name=${CHOSEN_UBOOT}_${UBOOT_VERSION}+${SUBREVISION}_${ARCH}
 	rm -rf $SRC/.tmp/$uboot_name
 	mkdir -p $SRC/.tmp/$uboot_name/usr/lib/{u-boot,$uboot_name} $SRC/.tmp/$uboot_name/DEBIAN
 
@@ -228,8 +228,8 @@ compile_uboot()
 
 	# set up control file
 	cat <<-EOF > $SRC/.tmp/$uboot_name/DEBIAN/control
-	Package: linux-u-boot-${BOARD}-${BRANCH}
-	Version: $REVISION
+	Package: linux-u-boot-${BOARD}
+	Version: ${version}+${SUBREVISION}
 	Architecture: $ARCH
 	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
 	Installed-Size: 1
@@ -692,9 +692,6 @@ process_patch_file()
 {
 	local patch=$1
 	local status=$2
-
-	# detect and remove files which patch will create
-	lsdiff -s --strip=1 $patch | grep '^+' | awk '{print $2}' | xargs -I % sh -c 'rm -f %'
 
 	echo "Processing file $patch" >> $DEST/debug/patching.log
 	patch --batch --silent -p1 -N < $patch >> $DEST/debug/patching.log 2>&1
