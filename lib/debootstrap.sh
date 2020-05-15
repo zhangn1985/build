@@ -42,7 +42,7 @@ debootstrap_ng()
 	[[ -n $FORCE_TMPFS_SIZE ]] && phymem=$FORCE_TMPFS_SIZE
 
 	[[ $use_tmpfs == yes ]] && mount -t tmpfs -o size=${phymem}M tmpfs $SDCARD
-
+if [[ x${USE_ARMBIAN_CONFIG} == x || ${USE_ARMBIAN_CONFIG} = "yes" ]]; then
 	# stage: prepare basic rootfs: unpack cache or create from scratch
 	create_rootfs_cache
 
@@ -57,7 +57,9 @@ debootstrap_ng()
 
 	# install from apt.armbian.com
 	[[ $EXTERNAL_NEW == prebuilt ]] && chroot_installpackages "yes"
-
+else
+	create_rootfs_cache_local
+fi
 	# stage: user customization script
 	# NOTE: installing too many packages may fill tmpfs mount
 	customize_image
@@ -67,7 +69,7 @@ debootstrap_ng()
 
 	# clean up / prepare for making the image
 	umount_chroot "$SDCARD"
-	post_debootstrap_tweaks
+	#post_debootstrap_tweaks
 
 	if [[ $ROOTFS_TYPE == fel ]]; then
 		FEL_ROOTFS=$SDCARD/
@@ -237,6 +239,161 @@ create_rootfs_cache()
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
 		[[ ${PIPESTATUS[0]} -ne 0 ]] && exit_with_error "Installation of Armbian packages failed"
+
+		# stage: remove downloaded packages
+		chroot $SDCARD /bin/bash -c "apt clean"
+
+		# DEBUG: print free space
+		echo -e "\nFree space:"
+		eval 'df -h' ${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/debootstrap.log'}
+
+		# create list of installed packages for debug purposes
+		chroot $SDCARD /bin/bash -c "dpkg --get-selections" | grep -v deinstall | awk '{print $1}' | cut -f1 -d':' > ${cache_fname}.list 2>&1
+
+		# creating xapian index that synaptic runs faster
+		if [[ $BUILD_DESKTOP == yes ]]; then
+			display_alert "Recreating Synaptic search index" "Please wait" "info"
+			chroot $SDCARD /bin/bash -c "/usr/sbin/update-apt-xapian-index -u"
+		fi
+
+		# this is needed for the build process later since resolvconf generated file in /run is not saved
+		rm $SDCARD/etc/resolv.conf
+		echo "nameserver $NAMESERVER" >> $SDCARD/etc/resolv.conf
+
+		# stage: make rootfs cache archive
+		display_alert "Ending debootstrap process and preparing cache" "$RELEASE" "info"
+		sync
+		# the only reason to unmount here is compression progress display
+		# based on rootfs size calculation
+		umount_chroot "$SDCARD"
+
+		tar cp --xattrs --directory=$SDCARD/ --exclude='./dev/*' --exclude='./proc/*' --exclude='./run/*' --exclude='./tmp/*' \
+			--exclude='./sys/*' . | pv -p -b -r -s $(du -sb $SDCARD/ | cut -f1) -N "$display_name" | lz4 -c > $cache_fname
+
+		# sign rootfs cache archive that it can be used for web cache once. Internal purposes
+		if [[ -n $GPG_PASS ]]; then
+			echo $GPG_PASS | gpg --passphrase-fd 0 --armor --detach-sign --pinentry-mode loopback --batch --yes $cache_fname
+		fi
+
+	fi
+
+	# used for internal purposes. Faster rootfs cache rebuilding
+	if [[ -n "$ROOT_FS_CREATE_ONLY" ]]; then
+		[[ $use_tmpfs = yes ]] && umount $SDCARD
+		rm -rf $SDCARD
+		# remove exit trap
+		trap - INT TERM EXIT
+        exit
+	fi
+
+	mount_chroot "$SDCARD"
+} #############################################################################
+
+
+# create_rootfs_cache_local
+#
+# unpacks cached rootfs for $RELEASE or creates one
+#
+create_rootfs_cache_local()
+{
+	if [[ "$ROOT_FS_CREATE_ONLY" == "force" ]]; then
+		local cycles=1
+		else
+		local cycles=2
+	fi
+	# seek last cache, proceed to previous otherwise build it
+	for ((n=0;n<${cycles};n++)); do
+
+		local cache_type='local'
+		local cache_name=${RELEASE}-${cache_type}-${ARCH}.tar.lz4
+		local cache_fname=${SRC}/cache/rootfs/${cache_name}
+		local display_name=${RELEASE}-${cache_type}-${ARCH}.tar.lz4
+
+		display_alert "Checking for local cache" "$display_name" "info"
+
+		if [[ -f $cache_fname ]]; then
+			break
+		else
+			display_alert "not found: try to use previous cache"
+		fi
+
+	done
+
+	if [[ -f $cache_fname && "$ROOT_FS_CREATE_ONLY" != "force" ]]; then
+		local date_diff=$(( ($(date +%s) - $(stat -c %Y $cache_fname)) / 86400 ))
+		display_alert "Extracting $display_name" "$date_diff days old" "info"
+		pv -p -b -r -c -N "[ .... ] $display_name" "$cache_fname" | lz4 -dc | tar xp --xattrs -C $SDCARD/
+		[[ $? -ne 0 ]] && rm $cache_fname && exit_with_error "Cache $cache_fname is corrupted and was deleted. Restart."
+		rm $SDCARD/etc/resolv.conf
+		echo "nameserver $NAMESERVER" >> $SDCARD/etc/resolv.conf
+		create_sources_list "$RELEASE" "$SDCARD/"
+	else
+		display_alert "... remote not found" "Creating new rootfs cache for $RELEASE" "info"
+
+
+       rm ${SRC}/cache/debootstrap.deb
+       wget http://${APT_MIRROR}/pool/main/d/debootstrap/debootstrap_1.0.123_all.deb -O ${SRC}/cache/debootstrap.deb
+       dpkg -i ${SRC}/cache/debootstrap.deb
+
+		# stage: debootstrap base system
+		if [[ $NO_APT_CACHER != yes ]]; then
+			# apt-cacher-ng apt-get proxy parameter
+			local apt_extra="-o Acquire::http::Proxy=\"http://${APT_PROXY_ADDR:-localhost:3142}\""
+			local apt_mirror="http://${APT_PROXY_ADDR:-localhost:3142}/$APT_MIRROR"
+		else
+			local apt_mirror="http://$APT_MIRROR"
+		fi
+
+		# fancy progress bars
+		[[ -z $OUTPUT_DIALOG ]] && local apt_extra_progress="--show-progress -o DPKG::Progress-Fancy=1"
+
+
+		display_alert "Installing base system" "Stage 1/2" "info"
+		eval 'debootstrap --variant=minbase --arch=$ARCH --components=${DEBOOTSTRAP_COMPONENTS} --foreign $RELEASE $SDCARD/ $apt_mirror' \
+			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/debootstrap.log'} \
+			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Debootstrap (stage 1/2)..." $TTY_Y $TTY_X'} \
+			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
+
+		[[ ${PIPESTATUS[0]} -ne 0 || ! -f $SDCARD/debootstrap/debootstrap ]] && exit_with_error "Debootstrap base system first stage failed"
+
+
+		display_alert "Installing base system" "Stage 2/2" "info"
+		eval 'chroot $SDCARD /bin/bash -c "/debootstrap/debootstrap --second-stage"' \
+			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/debootstrap.log'} \
+			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Debootstrap (stage 2/2)..." $TTY_Y $TTY_X'} \
+			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
+
+		[[ ${PIPESTATUS[0]} -ne 0 || ! -f $SDCARD/bin/bash ]] && exit_with_error "Debootstrap base system second stage failed"
+
+		mount_chroot "$SDCARD"
+
+		# stage: configure language and locales
+		display_alert "Configuring locales" "$DEST_LANG" "info"
+
+		[[ -f $SDCARD/etc/locale.gen ]] && sed -i "s/^# $DEST_LANG/$DEST_LANG/" $SDCARD/etc/locale.gen
+		eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "locale-gen $DEST_LANG"' ${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
+		eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "update-locale LANG=$DEST_LANG LANGUAGE=$DEST_LANG LC_MESSAGES=$DEST_LANG"' \
+			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
+
+		# stage: create apt-get sources list
+		create_sources_list "$RELEASE" "$SDCARD/"
+
+		# stage: update packages list
+		display_alert "Updating package list" "$RELEASE" "info"
+		eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "apt -q -y $apt_extra update"' \
+			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/debootstrap.log'} \
+			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Updating package lists..." $TTY_Y $TTY_X'} \
+			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
+
+		#[[ ${PIPESTATUS[0]} -ne 0 ]] && exit_with_error "Updating package lists failed"
+
+		# stage: upgrade base packages from xxx-updates and xxx-backports repository branches
+		display_alert "Upgrading base packages" "Armbian" "info"
+		eval 'LC_ALL=C LANG=C chroot $SDCARD /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt -y -q \
+			$apt_extra $apt_extra_progress upgrade"' \
+			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/debootstrap.log'} \
+			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Upgrading base packages..." $TTY_Y $TTY_X'} \
+			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
 		# stage: remove downloaded packages
 		chroot $SDCARD /bin/bash -c "apt clean"
