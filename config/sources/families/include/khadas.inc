@@ -8,7 +8,3 @@ BOOTPATCHDIR=khadas
 LINUXFAMILY=khadas
 BOOTENV_FILE='khadas-default.txt'
 BOOTSCRIPT="boot-khadas.cmd:boot.cmd"
-
-family_firmware_install() {
-	cp -rpf $SRC/cache/sources/khadas-blobs/firmware/* $1
-}

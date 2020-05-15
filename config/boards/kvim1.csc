@@ -47,9 +47,3 @@ uboot_custom_postprocess()
 {
 	uboot_vim1_postprocess $SRC/cache/sources/khadas-blobs/  vim1
 }
-
-write_uboot_platform()
-{
-	dd if=$1/u-boot.bin of=$2 bs=1 count=442 conv=fsync > /dev/null 2>&1
-	dd if=$1/u-boot.bin of=$2 bs=512 skip=1 seek=1 conv=fsync > /dev/null 2>&1
-}
