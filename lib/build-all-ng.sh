@@ -68,6 +68,7 @@ pack_upload ()
 	display_alert "Signing" "Please wait!" "info"
 	local version="Armbian_${REVISION}_${BOARD^}_${RELEASE}_${BRANCH}_${VER/-$LINUXFAMILY/}"
 	local subdir="archive"
+	compression_type=""
 
 	[[ $BUILD_DESKTOP == yes ]] && version=${version}_desktop
 	[[ $BUILD_MINIMAL == yes ]] && version=${version}_minimal
@@ -79,19 +80,35 @@ pack_upload ()
 		COMPRESS_OUTPUTIMAGE="sha,gpg,7z"
 	fi
 
+	if [[ $COMPRESS_OUTPUTIMAGE == *gz* ]]; then
+		display_alert "Compressing" "$DEST/images/${version}.img.gz" "info"
+		pigz $DESTIMG/${version}.img
+		rm ${DESTIMG}/${version}.img
+		compression_type=".gz"
+	fi
+
+	if [[ $COMPRESS_OUTPUTIMAGE == *xz* ]]; then
+		display_alert "Compressing" "$DEST/images/${version}.img.xz" "info"
+		pixz -3 < $DESTIMG/${version}.img > ${DESTIMG}/${version}.img.xz
+		rm ${DESTIMG}/${version}.img
+		compression_type=".xz"
+	fi
+
 	if [[ $COMPRESS_OUTPUTIMAGE == *sha* ]]; then
 		display_alert "SHA256 calculating" "${version}.img" "info"
-		sha256sum -b ${version}.img > ${version}.img.sha
+		sha256sum -b ${version}.img${compression_type} > ${version}.img${compression_type}.sha
 	fi
 
 	if [[ $COMPRESS_OUTPUTIMAGE == *gpg* ]]; then
 		if [[ -n $GPG_PASS ]]; then
 			display_alert "GPG signing" "${version}.img" "info"
-			echo $GPG_PASS | gpg --passphrase-fd 0 --armor --detach-sign --pinentry-mode loopback --batch --yes ${version}.img || exit 1
+			echo $GPG_PASS | gpg --passphrase-fd 0 --armor --detach-sign --pinentry-mode loopback --batch --yes ${version}.img${compression_type} || exit 1
 		else
 			display_alert "GPG signing skipped - no GPG_PASS" "${version}.img" "wrn"
 		fi
 	fi
+
+	fingerprint_image "${version}.img${compression_type}.txt" "${version}"
 
 	if [[ $COMPRESS_OUTPUTIMAGE == *7z* ]]; then
 		display_alert "Compressing" "${version}.7z" "info"
@@ -99,21 +116,10 @@ pack_upload ()
 		find . -type f -not -name '*.7z' -print0 | xargs -0 rm --
 	fi
 
-	if [[ $COMPRESS_OUTPUTIMAGE == *gz* ]]; then
-		display_alert "Compressing" "$DEST/images/${version}.img.gz" "info"
-		pigz $DESTIMG/${version}.img
-	fi
-
-	if [[ $COMPRESS_OUTPUTIMAGE == *xz* ]]; then
-		display_alert "Compressing" "$DEST/images/${version}.img.xz" "info"
-		pixz -3 < $DESTIMG/${version}.img > ${DESTIMG}/${version}.img.xz
-		rm ${DESTIMG}/${version}.img
-	fi
-
 	if [[ -n "${SEND_TO_SERVER}" ]]; then
 		ssh "${SEND_TO_SERVER}" "mkdir -p ${SEND_TO_LOCATION}${BOARD}/{archive,nightly}" &
 		display_alert "Uploading" "Please wait!" "info"
-		nice -n 19 bash -c "rsync -arP --info=progress2 --ignore-existing --remove-source-files --prune-empty-dirs $DESTIMG/ -e 'ssh -T -c aes128-ctr -o Compression=no -x -p 22' ${SEND_TO_SERVER}:${SEND_TO_LOCATION}${BOARD}/${subdir}" &
+		nice -n 19 bash -c "rsync -arP --info=progress2 --prune-empty-dirs $DESTIMG/ -e 'ssh -T -c aes128-ctr -o Compression=no -x -p 22' ${SEND_TO_SERVER}:${SEND_TO_LOCATION}${BOARD}/${subdir}; rm -rf ${DESTIMG}/*" &
 	else
 		mv $DESTIMG/*.* $DEST/images/
 	fi

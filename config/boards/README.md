@@ -4,6 +4,8 @@
 | BOARD_NAME | welcome text and hostname |
 | BOARDFAMILY | [sun8i, sun7i, rockchip64](../sources) |
 | BOOTCONFIG | name of u-boot config |
+| BOOTSIZE | size of a separate boot partition in Mib |
+| BOOTFS_TYPE | boot partition type: ext4, fat |
 | DEFAULT_OVERLAYS | usbhost1 usbhost2 ... |
 | DEFAULT_CONSOLE | serial = change default boot output |
 | MODULES_LEGACY | space delimited modules for legacy branch |
@@ -18,3 +20,14 @@
 | FULL_DESKTOP | yes/no = install Office, Thunderbird, ... |
 | DESKTOP_AUTOLOGIN | yes/no |
 | PACKAGE_LIST_DESKTOP_BOARD | space delimited packages to be installed on this boards desktop build |
+
+
+Statuses displayed at the login prompt:
+
+
+|file type|description|
+|:--|:--|
+|.csc or. tvb	|community creations|
+|.wip		|work in progress|
+|.eos		|end of life|
+
